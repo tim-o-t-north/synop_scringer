@@ -18,7 +18,7 @@ def fn_sign(code_number, style_neg="-", style_pos="+"):
 def fn_temperature(code_number):
     temperature = float(code_number[2:5]) / 10
     sign_of_temp = float(code_number[1:2])
-    return fn_sign(sign_of_temp) + str(temperature)
+    return float(fn_sign(sign_of_temp) + str(temperature))
 
 
 # function taking pressure in 4 digit 1 dp form
@@ -61,6 +61,7 @@ def fn_liquid_precip(RRRt):
 # vis decode function
 # deals with frankly baffling synop vis code_number
 def fn_vis_decode(vis):
+    output = {}
     if vis > 90:
        ship_vis = True
     else:
@@ -96,15 +97,43 @@ def fn_vis_decode(vis):
         vis = "greater than 50 km"
     else :
         vis = 'error: visibility code uninterpretable'
-    output = {'visiblity': vis, 'vis from ship': ship_vis }
+    output['visibility'] = vis
+    output['vis_from_ship'] = ship_vis
+    
     return output
+
+
+def fn_7group(data):
+    output = {}
+    output['present_weather_code'] = data[1:3]
+    output['past_weather_code'] = data[3:6]
+    return output
+
 
 # second part1  decoder function
 def fn_part1b_decode(data):
     output = {}
     data = string.split(data, " ")
     for item in data:
-        output[item] = item
+        try:
+            if item[0]== '1':
+                output['dry_bulb_temperature'] = fn_temperature(item)
+            if item[0] == '2':
+                output['dewpoint_temperature'] = fn_temperature(item)
+            if item[0] == '3':
+                output['zx'] = fn_temperature(item)
+            if item[0] == '4':
+                output['zy'] = fn_temperature(item)
+            if item[0] == '5':
+                output['??'] = fn_temperature(item)
+            if item[0] == '6':
+                output['??'] = fn_temperature(item)
+            if item[0] == '7':
+                output.update(fn_7group(item))
+            if item[0] == '8':
+                output['cloud'] = fn_temperature(item)
+        except:
+            a = 1
     output['spiltpartb'] = data
     
     return output
@@ -114,9 +143,8 @@ def fn_part1b_decode(data):
 def fn_part1a_decode(data):
     output = {}
     output['wmo number'] =  data[11:16]
-    #not currently working, and I don't know why
     vis_code = int(data[20:22])
-    #output['vis as code'] = vis_code
+    output['vis as code'] = vis_code
     output.update(fn_vis_decode(vis_code))
     #output['visibility'] = (fn_vis_decode(vis_code))
     output['wind speed'] =  (data[26:29])
